@@ -1,4 +1,6 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -6,17 +8,30 @@ public class Main {
 
   public static void main(String[] args) {
     System.out.println("Logs from your program will appear here!");
-    final ServerSocket serverSocket;
-    Socket clientSocket;
-    try {
-      serverSocket = new ServerSocket(4221);
+    try (final ServerSocket serverSocket = new ServerSocket(4221)) {
       serverSocket.setReuseAddress(true);
-      do {
-        clientSocket = serverSocket.accept();
-        clientSocket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
-      } while (true);
-    } catch (final IOException e) {
-      System.out.println("IOException: " + e.getMessage());
+      while (true) {
+        try (Socket socket = serverSocket.accept()) {
+          BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+          String requestLine = in.readLine();
+          if (requestLine != null && !requestLine.isEmpty()) {
+            final String[] requestParts = requestLine.split(" ");
+            if (requestParts.length >= 2) {
+              final String method = requestParts[0];
+              final String url = requestParts[1];
+              System.out.println("HTTP Method: " + method);
+              System.out.println("URL: " + url);
+              if(url.equals("/")) {
+                socket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+                continue;
+              }
+            }
+          }
+          socket.getOutputStream().write("HTTP/1.1 404 Not Found\r\n\r\n".getBytes());
+        }
+      }
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
