@@ -21,8 +21,18 @@ public class Main {
               final String url = requestParts[1];
               System.out.println("HTTP Method: " + method);
               System.out.println("URL: " + url);
-              if(url.equals("/")) {
-                socket.getOutputStream().write("HTTP/1.1 200 OK\r\n\r\n".getBytes());
+              final String prefix = "/echo/";
+              if(url.startsWith(prefix)) {
+                final String inputString = url.substring(prefix.length());
+                System.out.println("inputString: " + inputString);
+                final String response = String.format("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: %d\r\n\r\n%s",inputString.length(), inputString );
+                System.out.println("response: " + response);
+                socket.getOutputStream().write(response.getBytes());
+                continue;
+              }
+              if (url.equals("/")) {
+                final String response = "HTTP/1.1 200 OK\r\n\r\n";
+                socket.getOutputStream().write(response.getBytes());
                 continue;
               }
             }
